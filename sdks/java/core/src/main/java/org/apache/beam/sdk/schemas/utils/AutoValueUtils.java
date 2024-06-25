@@ -145,7 +145,7 @@ public class AutoValueUtils {
         .orElse(null);
   }
 
-  private static boolean matchConstructor(
+  public static boolean matchConstructor(
       TypeDescriptor typeDescriptor,
       Constructor<?> constructor,
       List<FieldValueTypeInformation> getterTypes) {

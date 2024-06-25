@@ -590,7 +590,7 @@ class BeamModulePlugin implements Plugin<Project> {
     // There are a few versions are determined by the BOMs by running scripts/tools/bomupgrader.py
     // marked as [bomupgrader]. See the documentation of that script for detail.
     def activemq_version = "5.14.5"
-    def autovalue_version = "1.9"
+    def autovalue_version = "1.11.0"
     def autoservice_version = "1.0.1"
     def aws_java_sdk_version = "1.12.135"
     def aws_java_sdk2_version = "2.20.47"
@@ -1424,7 +1424,7 @@ class BeamModulePlugin implements Plugin<Project> {
         enforceCheck !disableSpotlessCheck
         java {
           licenseHeader javaLicenseHeader
-          googleJavaFormat('1.7')
+          googleJavaFormat('1.19.2')
           target project.fileTree(project.projectDir) {
             include 'src/*/java/**/*.java'
             exclude '**/DefaultPackageTest.java'

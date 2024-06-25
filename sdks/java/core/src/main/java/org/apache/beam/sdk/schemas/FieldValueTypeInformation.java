@@ -156,8 +156,7 @@ public abstract class FieldValueTypeInformation implements Serializable {
       String original, T member) {
     @Nullable SchemaFieldName fieldName = member.getAnnotation(SchemaFieldName.class);
     @Nullable SchemaCaseFormat caseFormatAnnotation = member.getAnnotation(SchemaCaseFormat.class);
-    @Nullable
-    SchemaCaseFormat classCaseFormatAnnotation =
+    @Nullable SchemaCaseFormat classCaseFormatAnnotation =
         member.getDeclaringClass().getAnnotation(SchemaCaseFormat.class);
     if (fieldName != null) {
       if (caseFormatAnnotation != null) {
@@ -178,8 +177,8 @@ public abstract class FieldValueTypeInformation implements Serializable {
 
   public static <T extends AnnotatedElement & Member> @Nullable String getFieldDescription(
       T member) {
-    @Nullable
-    SchemaFieldDescription fieldDescription = member.getAnnotation(SchemaFieldDescription.class);
+    @Nullable SchemaFieldDescription fieldDescription =
+        member.getAnnotation(SchemaFieldDescription.class);
     if (fieldDescription == null) {
       return null;
     }
@@ -188,13 +187,20 @@ public abstract class FieldValueTypeInformation implements Serializable {
 
   public static FieldValueTypeInformation forGetter(
       TypeDescriptor typeDescriptor, Method method, int index) {
-    String name;
-    if (method.getName().startsWith("get")) {
-      name = ReflectUtils.stripPrefix(method.getName(), "get");
-    } else if (method.getName().startsWith("is")) {
-      name = ReflectUtils.stripPrefix(method.getName(), "is");
-    } else {
-      throw new RuntimeException("Getter has wrong prefix " + method.getName());
+    return forGetter(typeDescriptor, method, index, true);
+  }
+
+  public static FieldValueTypeInformation forGetter(
+      TypeDescriptor typeDescriptor, Method method, int index, boolean stripPrefix) {
+    String name = method.getName();
+    if (stripPrefix) {
+      if (method.getName().startsWith("get")) {
+        name = ReflectUtils.stripPrefix(method.getName(), "get");
+      } else if (method.getName().startsWith("is")) {
+        name = ReflectUtils.stripPrefix(method.getName(), "is");
+      } else {
+        throw new RuntimeException("Getter has wrong prefix " + method.getName());
+      }
     }
     TypeDescriptor<?> type = typeDescriptor.resolveType(method.getGenericReturnType());
     boolean nullable = hasNullableReturnType(method);
