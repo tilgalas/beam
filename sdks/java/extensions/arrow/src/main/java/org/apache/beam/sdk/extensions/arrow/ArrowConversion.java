@@ -485,7 +485,9 @@ public class ArrowConversion {
         throw new IllegalStateException("There are no more Rows.");
       }
       Row result =
-          Row.withSchema(schema).withFieldValueGetters(this.fieldValueGetters, this.currRowIndex);
+          Row.withSchema(schema)
+              .withFieldValueGetters(
+                  this.fieldValueGetters, this.currRowIndex, TypeDescriptor.of(Integer.class));
       this.currRowIndex += 1;
       return result;
     }

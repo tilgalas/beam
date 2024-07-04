@@ -106,7 +106,11 @@ public abstract class FieldValueTypeInformation implements Serializable {
 
     public abstract Builder setDescription(@Nullable String fieldDescription);
 
-    abstract FieldValueTypeInformation build();
+    public abstract FieldValueTypeInformation build();
+  }
+
+  public static Builder builder() {
+    return new AutoValue_FieldValueTypeInformation.Builder();
   }
 
   public static FieldValueTypeInformation forOneOf(
@@ -287,7 +291,8 @@ public abstract class FieldValueTypeInformation implements Serializable {
     return toBuilder().setName(name).build();
   }
 
-  static @Nullable FieldValueTypeInformation getIterableComponentType(TypeDescriptor<?> valueType) {
+  public static @Nullable FieldValueTypeInformation getIterableComponentType(
+      TypeDescriptor<?> valueType) {
     // TODO: Figure out nullable elements.
     TypeDescriptor<?> componentType = ReflectUtils.getIterableComponentType(valueType);
     if (componentType == null) {
@@ -307,13 +312,13 @@ public abstract class FieldValueTypeInformation implements Serializable {
   }
 
   // If the type is a map type, returns the key type, otherwise returns a null reference.
-  private static @Nullable FieldValueTypeInformation getMapKeyType(
+  public static @Nullable FieldValueTypeInformation getMapKeyType(
       TypeDescriptor<?> typeDescriptor) {
     return getMapType(typeDescriptor, 0);
   }
 
   // If the type is a map type, returns the value type, otherwise returns a null reference.
-  private static @Nullable FieldValueTypeInformation getMapValueType(
+  public static @Nullable FieldValueTypeInformation getMapValueType(
       TypeDescriptor<?> typeDescriptor) {
     return getMapType(typeDescriptor, 1);
   }

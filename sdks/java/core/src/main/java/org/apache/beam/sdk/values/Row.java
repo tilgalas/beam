@@ -771,6 +771,7 @@ public abstract class Row implements Serializable {
       checkState(values.isEmpty());
       return new FieldValueBuilder(schema, null).withFieldValue(fieldAccessDescriptor, value);
     }
+
     /**
      * Sets field values using the field names. Nested values can be set using the field selection
      * syntax.
@@ -837,9 +838,11 @@ public abstract class Row implements Serializable {
 
     @Internal
     public Row withFieldValueGetters(
-        Factory<List<FieldValueGetter>> fieldValueGetterFactory, Object getterTarget) {
+        Factory<List<FieldValueGetter>> fieldValueGetterFactory,
+        Object getterTarget,
+        TypeDescriptor<?> getterTargetType) {
       checkState(getterTarget != null, "getters require withGetterTarget.");
-      return new RowWithGetters(schema, fieldValueGetterFactory, getterTarget);
+      return new RowWithGetters(schema, fieldValueGetterFactory, getterTarget, getterTargetType);
     }
 
     public Row build() {
