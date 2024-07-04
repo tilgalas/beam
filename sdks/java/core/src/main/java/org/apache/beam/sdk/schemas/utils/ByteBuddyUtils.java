@@ -395,11 +395,19 @@ public class ByteBuddyUtils {
       return returnRawTypes ? type.getRawType() : type.getType();
     }
 
+    public static TypeDescriptor primitiveToWrapper(TypeDescriptor typeDescriptor) {
+      Class cls = typeDescriptor.getRawType();
+      if (cls.isPrimitive()) {
+        return TypeDescriptor.of(ClassUtils.primitiveToWrapper(cls));
+      } else {
+        return typeDescriptor;
+      }
+    }
+
     @SuppressWarnings("unchecked")
     private <ElementT> TypeDescriptor<Collection<ElementT>> createCollectionType(
         TypeDescriptor<?> componentType) {
-      TypeDescriptor wrappedComponentType =
-          TypeDescriptor.of(ClassUtils.primitiveToWrapper(componentType.getRawType()));
+      TypeDescriptor wrappedComponentType = primitiveToWrapper(componentType);
       return new TypeDescriptor<Collection<ElementT>>() {}.where(
           new TypeParameter<ElementT>() {}, wrappedComponentType);
     }
@@ -407,8 +415,7 @@ public class ByteBuddyUtils {
     @SuppressWarnings("unchecked")
     private <ElementT> TypeDescriptor<Iterable<ElementT>> createIterableType(
         TypeDescriptor<?> componentType) {
-      TypeDescriptor wrappedComponentType =
-          TypeDescriptor.of(ClassUtils.primitiveToWrapper(componentType.getRawType()));
+      TypeDescriptor wrappedComponentType = primitiveToWrapper(componentType);
       return new TypeDescriptor<Iterable<ElementT>>() {}.where(
           new TypeParameter<ElementT>() {}, wrappedComponentType);
     }
@@ -1472,10 +1479,9 @@ public class ByteBuddyUtils {
         // Push all creator parameters on the stack.
         TypeConversion<Type> convertType = typeConversionsFactory.createTypeConversion(true);
         for (int i = 0; i < parameters.size(); i++) {
-          Parameter parameter = parameters.get(i);
+          FieldValueTypeInformation fieldType = fields.get(fieldMapping.get(i));
           ForLoadedType convertedType =
-              new ForLoadedType(
-                  (Class) convertType.convert(TypeDescriptor.of(parameter.getType())));
+              new ForLoadedType((Class) convertType.convert(fieldType.getType()));
 
           // The instruction to read the parameter. Use the fieldMapping to reorder parameters as
           // necessary.
@@ -1490,7 +1496,7 @@ public class ByteBuddyUtils {
                   stackManipulation,
                   typeConversionsFactory
                       .createSetterConversions(readParameter)
-                      .convert(TypeDescriptor.of(parameter.getParameterizedType())));
+                      .convert(fieldType.getType()));
         }
         stackManipulation =
             new StackManipulation.Compound(

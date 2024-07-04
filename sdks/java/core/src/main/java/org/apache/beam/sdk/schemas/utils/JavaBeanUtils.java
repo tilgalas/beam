@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.asm.AsmVisitorWrapper;
 import net.bytebuddy.description.method.MethodDescription.ForLoadedMethod;
+import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.scaffold.InstrumentedType;
 import net.bytebuddy.implementation.FixedValue;
@@ -37,6 +38,7 @@ import net.bytebuddy.implementation.bytecode.ByteCodeAppender;
 import net.bytebuddy.implementation.bytecode.ByteCodeAppender.Size;
 import net.bytebuddy.implementation.bytecode.Removal;
 import net.bytebuddy.implementation.bytecode.StackManipulation;
+import net.bytebuddy.implementation.bytecode.assign.TypeCasting;
 import net.bytebuddy.implementation.bytecode.member.MethodInvocation;
 import net.bytebuddy.implementation.bytecode.member.MethodReturn;
 import net.bytebuddy.implementation.bytecode.member.MethodVariableAccess;
@@ -69,7 +71,9 @@ public class JavaBeanUtils {
   }
 
   private static final String CONSTRUCTOR_HELP_STRING =
-      "In order to infer a Schema from a Java Bean, it must have a constructor annotated with @SchemaCreate, or it must have a compatible setter for every getter used as a Schema field.";
+      "In order to infer a Schema from a Java Bean, it must have a constructor annotated with"
+          + " @SchemaCreate, or it must have a compatible setter for every getter used as a Schema"
+          + " field.";
 
   // Make sure that there are matching setters and getters.
   public static void validateJavaBean(
@@ -91,7 +95,8 @@ public class JavaBeanUtils {
       if (setterType == null) {
         throw new RuntimeException(
             String.format(
-                "Java Bean '%s' contains a getter for field '%s', but does not contain a matching setter. %s",
+                "Java Bean '%s' contains a getter for field '%s', but does not contain a matching"
+                    + " setter. %s",
                 type.getMethod().getDeclaringClass(), type.getName(), CONSTRUCTOR_HELP_STRING));
       }
       if (!type.getType().equals(setterType.getType())) {
@@ -103,7 +108,8 @@ public class JavaBeanUtils {
       if (!type.isNullable() == setterType.isNullable()) {
         throw new RuntimeException(
             String.format(
-                "Java Bean '%s' contains a setter for field '%s' that has a mismatching nullable attribute. %s",
+                "Java Bean '%s' contains a setter for field '%s' that has a mismatching nullable"
+                    + " attribute. %s",
                 type.getMethod().getDeclaringClass(), type.getName(), CONSTRUCTOR_HELP_STRING));
       }
     }
@@ -379,6 +385,12 @@ public class JavaBeanUtils {
       return (methodVisitor, implementationContext, instrumentedMethod) -> {
         // this + method parameters.
         int numLocals = 1 + instrumentedMethod.getParameters().size();
+        StackManipulation cast =
+            typeInformation
+                    .getRawType()
+                    .isAssignableFrom(typeInformation.getMethod().getReturnType())
+                ? StackManipulation.Trivial.INSTANCE
+                : TypeCasting.to(TypeDescription.ForLoadedType.of(typeInformation.getRawType()));
 
         // StackManipulation that will read the value from the class field.
         StackManipulation readValue =
@@ -386,7 +398,8 @@ public class JavaBeanUtils {
                 // Method param is offset 1 (offset 0 is the this parameter).
                 MethodVariableAccess.REFERENCE.loadFrom(1),
                 // Invoke the getter
-                MethodInvocation.invoke(new ForLoadedMethod(typeInformation.getMethod())));
+                MethodInvocation.invoke(new ForLoadedMethod(typeInformation.getMethod())),
+                cast);
 
         StackManipulation stackManipulation =
             new StackManipulation.Compound(

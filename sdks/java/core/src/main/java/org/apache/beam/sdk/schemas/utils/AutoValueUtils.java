@@ -142,7 +142,7 @@ public class AutoValueUtils {
     Optional<Constructor<?>> constructor =
         Arrays.stream(generatedTypeDescriptor.getRawType().getDeclaredConstructors())
             .filter(c -> !Modifier.isPrivate(c.getModifiers()))
-            .filter(c -> matchConstructor(c, schemaTypes))
+            .filter(c -> matchConstructor(generatedTypeDescriptor, c, schemaTypes))
             .findAny();
     return constructor
         .map(
@@ -157,7 +157,9 @@ public class AutoValueUtils {
   }
 
   private static boolean matchConstructor(
-      Constructor<?> constructor, List<FieldValueTypeInformation> getterTypes) {
+      TypeDescriptor typeDescriptor,
+      Constructor<?> constructor,
+      List<FieldValueTypeInformation> getterTypes) {
     if (constructor.getParameters().length != getterTypes.size()) {
       return false;
     }
@@ -173,7 +175,8 @@ public class AutoValueUtils {
     // Verify that constructor parameters match (name and type) the inferred schema.
     for (Parameter parameter : constructor.getParameters()) {
       FieldValueTypeInformation type = typeMap.get(parameter.getName());
-      if (type == null || type.getRawType() != parameter.getType()) {
+      if (type == null
+          || !type.getType().equals(typeDescriptor.resolveType(parameter.getParameterizedType()))) {
         valid = false;
         break;
       }
@@ -317,11 +320,10 @@ public class AutoValueUtils {
 
         TypeConversion<Type> convertType = typeConversionsFactory.createTypeConversion(true);
         for (int i = 0; i < setters.size(); ++i) {
-          Method setterMethod = checkNotNull(setters.get(i).getMethod());
-          Parameter parameter = setterMethod.getParameters()[0];
+          FieldValueTypeInformation setterType = setters.get(i);
+          Method setterMethod = checkNotNull(setterType.getMethod());
           ForLoadedType convertedType =
-              new ForLoadedType(
-                  (Class) convertType.convert(TypeDescriptor.of(parameter.getParameterizedType())));
+              new ForLoadedType((Class) convertType.convert(setterType.getType()));
 
           StackManipulation readParameter =
               new StackManipulation.Compound(
@@ -336,7 +338,7 @@ public class AutoValueUtils {
                   Duplication.SINGLE,
                   typeConversionsFactory
                       .createSetterConversions(readParameter)
-                      .convert(TypeDescriptor.of(parameter.getType())),
+                      .convert(setterType.getType()),
                   MethodInvocation.invoke(new ForLoadedMethod(setterMethod)),
                   Removal.SINGLE);
         }
